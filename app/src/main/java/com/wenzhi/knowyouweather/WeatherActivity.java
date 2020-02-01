@@ -1,6 +1,9 @@
 package com.wenzhi.knowyouweather;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.view.GravityCompat;
+import androidx.drawerlayout.widget.DrawerLayout;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import android.content.SharedPreferences;
 import android.graphics.Color;
@@ -11,6 +14,7 @@ import android.text.TextUtils;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
@@ -63,6 +67,15 @@ public class WeatherActivity extends AppCompatActivity {
 
     private ImageView bingImageView;
 
+    //下拉刷新
+    public SwipeRefreshLayout swipeRefreshLayout;
+
+    //侧滑布局
+    private Button navButton;
+
+    public DrawerLayout drawerLayout;
+
+
 
 
     @Override
@@ -104,6 +117,22 @@ public class WeatherActivity extends AppCompatActivity {
 
         bingImageView = (ImageView)findViewById(R.id.bing_pc_img);
 
+        swipeRefreshLayout = (SwipeRefreshLayout) findViewById(R.id.swip_refresh);
+
+        navButton = (Button)findViewById(R.id.nav_button);
+
+        drawerLayout = (DrawerLayout)findViewById(R.id.drawer_layout);
+
+        navButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                //打开侧滑栏
+
+                drawerLayout.openDrawer(GravityCompat.START);
+            }
+        });
+
+        //获取已经缓存的背景图片
         String bingpic = PreferenceManager.getDefaultSharedPreferences(this).getString("bing_pic", null);
 
         if (bingpic != null) {
@@ -114,24 +143,31 @@ public class WeatherActivity extends AppCompatActivity {
             loadBingImage();
         }
 
-
         aqiText.setText("暂无");
         pm25Text.setText("暂无");
-//
-//        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
-//
-//        String weatherString = preferences.getString("weather", null);
-//
-//        if (weatherString != null) {
-//            //有缓存直接解析天气数据
-//            NowWeather nowWeather = Utility.handleWeatherResponse(weatherString);
-//            showNowWeatherInfo(nowWeather);
-//        }else {
-//            去服务器查询天气数据
-            String weatherId  = getIntent().getStringExtra("weather_id");
-            weatherlayout.setVisibility(View.VISIBLE);
-            requestWeather(weatherId);
-//        }
+
+//       去服务器查询天气数据
+        final String weatherId = getIntent().getStringExtra("weather_id");
+
+        weatherlayout.setVisibility(View.VISIBLE);
+        //刷新天气数据
+        requestWeather(weatherId);
+
+//        增加下拉刷新
+        swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                SharedPreferences mysp = PreferenceManager.getDefaultSharedPreferences(WeatherActivity.this);
+                String sp = mysp.getString("weather_id", null);
+                if (sp != null) {
+                    requestWeather(sp);
+                }else {
+                    requestWeather(weatherId);
+
+                }
+            }
+        });
+
     }
 
     //请求背景图片的image背景
@@ -162,7 +198,8 @@ public class WeatherActivity extends AppCompatActivity {
     }
 
     //请求现在的天气信息
-    private void requestWeather(String weatherId) {
+    public void requestWeather(String weatherId) {
+
         String weatherNowUrl = "https://free-api.heweather.net/s6/weather/now?location="+weatherId
                 +"&key=cf22e815904f41c0964338d1389cc684";
 
@@ -329,6 +366,8 @@ public class WeatherActivity extends AppCompatActivity {
 
         //请求背景图片
         loadBingImage();
+        //调用刷新完成的时间
+        swipeRefreshLayout.setRefreshing(false);
 
     }
 
@@ -388,7 +427,7 @@ public class WeatherActivity extends AppCompatActivity {
 
     //展示天气信息
     private void showNowWeatherInfo(NowWeather nowWeather) {
-        String cityName = nowWeather.basic.cityName;
+        String cityName = nowWeather.basic.locationName;
         String updaTime = nowWeather.update.updateTime.split(" ")[0];
         String degree = nowWeather.now.templerature + "℃";
         String weatherInfo = nowWeather.now.weatherText;
