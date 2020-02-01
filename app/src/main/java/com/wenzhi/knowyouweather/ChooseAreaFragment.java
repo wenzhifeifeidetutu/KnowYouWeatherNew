@@ -1,7 +1,10 @@
 package com.wenzhi.knowyouweather;
 
 import android.app.ProgressDialog;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -80,10 +83,12 @@ public class ChooseAreaFragment extends Fragment {
 
     //选中的城市
     private City selectedCity;
+    //当前城市名称
+    private String currentCityName;
 
     //当前选中的级别
 
-    private int currentLevel = 0;
+    private int currentLevel ;
 
     @Nullable
     @Override
@@ -116,7 +121,21 @@ public class ChooseAreaFragment extends Fragment {
                     queryCities();
                 }else if (currentLevel == LEVEL_CITY) {
                     selectedCity = cityList.get(position);
+                    currentCityName = selectedCity.getCityName();
+
                     queryCounties();
+                }else if (currentLevel == LEVEL_COUNTY) {
+                    String weatherId = countyList.get(position).getWeatherId();
+                    Intent intent = new Intent(getActivity(), WeatherActivity.class);
+                    intent.putExtra("weather_id", weatherId);
+                    startActivity(intent);
+                    //设置sheardpreference
+                    SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getActivity());
+                    SharedPreferences.Editor editor = sharedPreferences.edit();
+                    editor.putString("weather_id", weatherId);
+                    editor.apply();
+
+                    getActivity().finish();
                 }
             }
         });
@@ -132,6 +151,8 @@ public class ChooseAreaFragment extends Fragment {
                 }
             }
         });
+
+        queryProvinces();
     }
     //查询省
 

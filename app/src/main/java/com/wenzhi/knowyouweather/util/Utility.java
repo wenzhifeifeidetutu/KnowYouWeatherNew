@@ -3,9 +3,16 @@ package com.wenzhi.knowyouweather.util;
 import android.text.TextUtils;
 
 
+import com.google.gson.Gson;
 import com.wenzhi.knowyouweather.db.City;
 import com.wenzhi.knowyouweather.db.County;
 import com.wenzhi.knowyouweather.db.Province;
+import com.wenzhi.knowyouweather.gson.AqiWeather;
+import com.wenzhi.knowyouweather.gson.FroecastWeather;
+import com.wenzhi.knowyouweather.gson.LifeStyle;
+import com.wenzhi.knowyouweather.gson.LifeStyleWeather;
+import com.wenzhi.knowyouweather.gson.Now;
+import com.wenzhi.knowyouweather.gson.NowWeather;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -107,6 +114,82 @@ public class Utility {
 
         return false;
 
+    }
+
+
+    //添加解析现在的天气JSON数据
+
+    public static NowWeather handleWeatherResponse(String response) {
+        try {
+            JSONObject jsonObject = new JSONObject(response);
+
+            JSONArray jsonArray = jsonObject.getJSONArray("HeWeather6");
+            String weatherContent = jsonArray.getJSONObject(0).toString();
+
+            return new Gson().fromJson(weatherContent, NowWeather.class);
+
+        }catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        return null;
+
+    }
+
+//获取生活指数json
+    public static LifeStyleWeather handleLifeStyleWeatherResponse(String response) {
+        try {
+            JSONObject jsonObject = new JSONObject(response);
+
+            JSONArray jsonArray = jsonObject.getJSONArray("HeWeather6");
+            String weatherContent = jsonArray.getJSONObject(0).toString();
+
+            return new Gson().fromJson(weatherContent, LifeStyleWeather.class);
+
+        }catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        return null;
+
+    }
+
+
+//三天详细天气
+    public static FroecastWeather handleFroecatWeatherResponse(String response) {
+        try {
+            JSONObject jsonObject = new JSONObject(response);
+
+            JSONArray jsonArray = jsonObject.getJSONArray("HeWeather6");
+            String weatherContent = jsonArray.getJSONObject(0).toString();
+
+            return new Gson().fromJson(weatherContent, FroecastWeather.class);
+
+        }catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        return null;
+
+    }
+
+
+    //获取空气质量信息
+
+    public static AqiWeather handleAqiWeatherResponse(String response) {
+        try {
+            JSONObject jsonObject = new JSONObject(response);
+
+            JSONArray jsonArray = jsonObject.getJSONArray("HeWeather6");
+            String weatherContent = jsonArray.getJSONObject(0).toString();
+
+            return new Gson().fromJson(weatherContent, AqiWeather.class);
+
+        }catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        return null;
     }
 
 }
