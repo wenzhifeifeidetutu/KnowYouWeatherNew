@@ -5,6 +5,7 @@ import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Build;
@@ -22,6 +23,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
+import com.google.gson.JsonObject;
 import com.wenzhi.knowyouweather.gson.AqiWeather;
 import com.wenzhi.knowyouweather.gson.Froecast;
 import com.wenzhi.knowyouweather.gson.FroecastWeather;
@@ -29,8 +31,13 @@ import com.wenzhi.knowyouweather.gson.LifeStyle;
 import com.wenzhi.knowyouweather.gson.LifeStyleWeather;
 import com.wenzhi.knowyouweather.gson.Now;
 import com.wenzhi.knowyouweather.gson.NowWeather;
+import com.wenzhi.knowyouweather.service.AutoUpdateService;
 import com.wenzhi.knowyouweather.util.HttpUtil;
 import com.wenzhi.knowyouweather.util.Utility;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.io.IOException;
 
@@ -75,8 +82,16 @@ public class WeatherActivity extends AppCompatActivity {
 
     public DrawerLayout drawerLayout;
 
+    //天气诗句
+    public TextView contentText;
 
+    //作者
+    public TextView authroText;
 
+    private String[] weathershi = new String[]{
+            "风","云","雨","雪","霜","露", "雾","雷","晴","阴"
+
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -123,6 +138,11 @@ public class WeatherActivity extends AppCompatActivity {
 
         drawerLayout = (DrawerLayout)findViewById(R.id.drawer_layout);
 
+        contentText = (TextView)findViewById(R.id.content_text);
+
+        authroText = (TextView)findViewById(R.id.author);
+
+
         navButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -167,6 +187,10 @@ public class WeatherActivity extends AppCompatActivity {
                 }
             }
         });
+
+        //打开定时任务
+        Intent autoInten = new Intent(this, AutoUpdateService.class);
+        startService(autoInten);
 
     }
 
@@ -247,6 +271,59 @@ public class WeatherActivity extends AppCompatActivity {
                         }
                     }
                 });
+
+                //获取诗句
+                for (int i = 0; i < weathershi.length; i++) {
+                    if (nowWeather.now.weatherText.contains(weathershi[i])) {
+//                        请求诗句
+                        String shiuri = "http://api.tianapi.com/txapi/tianqishiju/index?key=b89464eb3a045df413329379481743b6&tqtype="+(i+1);
+                        HttpUtil.sendOkHttpRequest(shiuri, new Callback() {
+                            @Override
+                            public void onFailure(Call call, IOException e) {
+                                contentText.setVisibility(View.GONE);
+                                authroText.setVisibility(View.GONE);
+                            }
+
+                            @Override
+                            public void onResponse(Call call, final Response response) throws IOException {
+                                contentText.setVisibility(View.VISIBLE);
+                                authroText.setVisibility(View.VISIBLE);
+                                try {
+
+                                    JSONObject jsonObject = new JSONObject(response.body().string());
+                                    JSONArray jsonArray = jsonObject.getJSONArray("newslist");
+                                    JSONObject jsonObject1 = jsonArray.getJSONObject(0);
+                                    final String content = jsonObject1.getString("content");
+                                    final String author = jsonObject1.getString("author");
+                                    final String source = jsonObject1.getString("source");
+
+                                    runOnUiThread(new Runnable() {
+                                        @Override
+                                        public void run() {
+
+
+                                            if (!TextUtils.isEmpty(content)) {
+                                                contentText.setText(content);
+                                            }
+
+                                            if (!TextUtils.isEmpty(author)) {
+                                                authroText.setText("-- " + author + "《" + source + "》");
+                                            }
+
+
+                                        }
+                                    });
+                                } catch (JSONException e) {
+                                    e.printStackTrace();
+                                }
+
+
+                            }
+                        });
+                    }
+                }
+
+
             }
         });
 
@@ -332,8 +409,8 @@ public class WeatherActivity extends AppCompatActivity {
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-//                        Toast.makeText(WeatherActivity.this, "获取天气信息失败", Toast.LENGTH_SHORT).show();
-
+                        aqiText.setText("暂无");
+                        pm25Text.setText("暂无");
                     }
                 });
 
@@ -348,26 +425,25 @@ public class WeatherActivity extends AppCompatActivity {
                     @Override
                     public void run() {
                         if (aqiWeather != null && "ok".equals(aqiWeather.status)) {
-//                            SharedPreferences.Editor editor = PreferenceManager.getDefaultSharedPreferences(WeatherActivity.this)
-//                                    .edit();
-//                            editor.putString("weather", responseText);
-//                            editor.apply();
                             //展示
                             showAirWeather(aqiWeather);
 
                         }else {
-                            Toast.makeText(WeatherActivity.this, "获取天气信息失败", Toast.LENGTH_SHORT).show();
+                            aqiText.setText("暂无");
+                            pm25Text.setText("暂无");
                         }
                     }
                 });
             }
         });
 
-
         //请求背景图片
         loadBingImage();
         //调用刷新完成的时间
         swipeRefreshLayout.setRefreshing(false);
+
+
+
 
     }
 
@@ -428,7 +504,7 @@ public class WeatherActivity extends AppCompatActivity {
     //展示天气信息
     private void showNowWeatherInfo(NowWeather nowWeather) {
         String cityName = nowWeather.basic.locationName;
-        String updaTime = nowWeather.update.updateTime.split(" ")[0];
+        String updaTime = nowWeather.update.updateTime.split(" ")[1];
         String degree = nowWeather.now.templerature + "℃";
         String weatherInfo = nowWeather.now.weatherText;
 
