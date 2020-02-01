@@ -11,3 +11,6 @@
 增加下滑刷新沉浸式浏览
 
 以下是显示的图片
+![图片1](https://github.com/wenzhifeifeidetutu/KnowYouWeatherNew/blob/master/Screenshot_20200201-200405.jpg)
+![图片2](https://github.com/wenzhifeifeidetutu/KnowYouWeatherNew/blob/master/Screenshot_20200201-200415.jpg)
+![图片3](https://github.com/wenzhifeifeidetutu/KnowYouWeatherNew/blob/master/Screenshot_20200201-200432.jpg)
